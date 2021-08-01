@@ -5,23 +5,22 @@ const MtaGraph = require('../dist/index');
 
 let mtaGraph;
 
-async function generate() {
+async function parse() {
     const mtaString = fs.readFileSync('./tests/mta.yaml', 'utf8');
 
-    return MtaGraph.generate(mtaString);
+    return MtaGraph.parse(mtaString);
 }
 
 function countLinks() {
     let count = 0;
     mtaGraph.nodes.forEach((node) => {
-        // eslint-disable-next-line no-unused-vars
-        node.links.forEach((_link) => count++);
+        node.links.forEach(() => count++);
     });
     return count;
 }
 
 beforeAll(async () => {
-    mtaGraph = await generate();
+    mtaGraph = await parse();
 });
 
 test('Number of nodes', async () => {

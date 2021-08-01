@@ -1,7 +1,7 @@
 {
-    "name": "sambarza-sap-mta-parser",
-    "version": "0.0.3",
-    "description": "Parse a SAP MTA file and expose modules, resources and them relationships as Javascript objects",
+    "name": "mta-deps-parser",
+    "version": "0.0.1",
+    "description": "Parse a SAP MTA development descriptor and expose modules, resources and dependencies between them as Javascript objects",
     "type": "commonjs",
     "main": "./dist/index.js",
     "dependencies": {
@@ -26,7 +26,7 @@
         "build": "rollup -c config/rollup.node-config.js"
     },
     "author": "Samuele Barzaghi <sambarza@gmail.com>",
-    "repository": "github:sbarzaghialteaup/mta-graph",
+    "repository": "github:sbarzaghialteaup/mta-deps-parser",
     "license": "ISC",
     "files": [
         "dist/"

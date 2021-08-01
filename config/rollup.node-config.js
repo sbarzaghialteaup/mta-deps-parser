@@ -1,6 +1,6 @@
 export default {
     input: {
-        index: 'src/mta-graph.js',
+        index: 'src/mta-deps-parser.js',
     },
     output: {
         dir: 'dist',

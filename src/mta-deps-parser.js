@@ -512,10 +512,10 @@ class MtaGraph {
     }
 }
 
-function generateMtaGraph(mtaFile) {
+function parse(str) {
     const mtaGraph = new MtaGraph();
 
-    const mta = YAML.parse(mtaFile);
+    const mta = YAML.parse(str);
 
     extractModules(mta, mtaGraph);
 
@@ -538,7 +538,7 @@ function generateMtaGraph(mtaFile) {
     return mtaGraph;
 }
 
-module.exports.generate = generateMtaGraph;
+module.exports.parse = parse;
 module.exports.categories = nodeCategory;
 module.exports.nodeType = nodeType;
 module.exports.linkType = linkType;
