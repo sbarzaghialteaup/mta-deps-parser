@@ -19,7 +19,7 @@ This example read the file, call the `parse` method and print the list of all th
 
 ```javascript
 const fs = require('fs');
-const MtaDepsParser = require('../src/mta-deps-parser');
+const MtaDepsParser = require('mta-deps-parser');
 
 const mtaString = fs.readFileSync('./mta.yaml', 'utf8');
 
