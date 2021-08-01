@@ -1,0 +1,39 @@
+{
+    "name": "sambarza-sap-mta-parser",
+    "version": "0.0.3",
+    "description": "Parse a SAP MTA file and expose modules, resources and them relationships as Javascript objects",
+    "type": "commonjs",
+    "main": "./dist/index.js",
+    "dependencies": {
+        "yaml": "^1.10.2"
+    },
+    "devDependencies": {
+        "eslint": "^7.31.0",
+        "eslint-config-airbnb-base": "^14.2.1",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-import": "^2.23.4",
+        "eslint-plugin-prettier": "3.4.0",
+        "husky": "^7.0.0",
+        "jest": "^27.0.6",
+        "prettier": "2.3.2",
+        "rollup": "^2.55.1"
+    },
+    "scripts": {
+        "lint": "eslint ./src",
+        "postlint": "echo ✅ lint valid",
+        "test": "npm run lint && npm run build && jest",
+        "prepare": "husky install",
+        "build": "rollup -c config/rollup.node-config.js"
+    },
+    "author": "Samuele Barzaghi <sambarza@gmail.com>",
+    "repository": "github:sbarzaghialteaup/mta-graph",
+    "license": "ISC",
+    "files": [
+        "dist/"
+    ],
+    "keywords": [
+        "MTA",
+        "parser",
+        "SAP"
+    ]
+}
