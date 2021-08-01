@@ -49,12 +49,12 @@ Each node has some properties to describe the node and the property `links` that
 
 Each node exposes the following properties:
 
-* `category`: category of the node: module, resource, etc, possible categories are exposed as constants defined in [`nodeCategory`](https://github.com/sbarzaghialteaup/mta-deps-parser/new/master?readme=1#node-categories)
+* `category`: category of the node: module, resource, etc, possible categories are exposed as constants defined in [`nodeCategory`](https://github.com/sbarzaghialteaup/mta-deps-parser#node-categories)
 
-* `type`: type of the node, nodejs, generic deployer, approuter, db deployer, xsuaa service, etc, possible types are exposed as constants defined in [`nodeType`](https://github.com/sbarzaghialteaup/mta-deps-parser/new/master?readme=1#node-types)
+* `type`: type of the node, nodejs, generic deployer, approuter, db deployer, xsuaa service, etc, possible types are exposed as constants defined in [`nodeType`](https://github.com/sbarzaghialteaup/mta-deps-parser#node-types)
 * `name`: name of the module or resource
 * `links`: array with the link to the other nodes, properties:
-  * `type`: the type of the link, possible values are exposed as constants defined in [`linkType`](https://github.com/sbarzaghialteaup/mta-deps-parser/new/master?readme=1#link-types)
+  * `type`: the type of the link, possible values are exposed as constants defined in [`linkType`](https://github.com/sbarzaghialteaup/mta-deps-parser#link-types)
   * `destNode`: a reference to the destination node
 * `additionalInfo`: depending on the type of the node additional properties are available (not yet completely implemented)
 
