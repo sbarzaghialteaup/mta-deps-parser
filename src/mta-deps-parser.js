@@ -55,10 +55,7 @@ const linkType = {
 
 function getNodeType(nodeInfo) {
     if (nodeInfo.additionalInfo.category === nodeCategory.module) {
-        if (
-            nodeInfo.additionalInfo.type === 'nodejs' &&
-            nodeInfo.additionalInfo.module.path.search('approuter') >= 0
-        ) {
+        if (nodeInfo.additionalInfo.module.path.search('approuter') >= 0) {
             return nodeType.approuter;
         }
         if (nodeInfo.additionalInfo.type === 'nodejs') {
