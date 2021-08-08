@@ -478,6 +478,10 @@ function setClusterToLinks(mtaGraph) {
             ) {
                 link.cluster = 'HTML5 APPS';
             }
+
+            if (link.type === linkType.deployWorkflowDefinition) {
+                link.cluster = 'WORKFLOW';
+            }
         });
     });
 }
