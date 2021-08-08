@@ -45,6 +45,7 @@ const linkType = {
     pointToUrl: 'point to url',
     useAppsFrom: 'use apps from',
     deployAppsTo: 'deploy apps to',
+    deployWorkflowDefinition: 'deploy workflow definition to',
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
@@ -55,7 +56,7 @@ const linkType = {
 
 function getNodeType(nodeInfo) {
     if (nodeInfo.additionalInfo.category === nodeCategory.module) {
-        if (nodeInfo.additionalInfo.module.path.search('approuter') >= 0) {
+        if (nodeInfo.additionalInfo.module.path?.search('approuter') >= 0) {
             return nodeType.approuter;
         }
         if (nodeInfo.additionalInfo.type === 'nodejs') {
@@ -166,6 +167,13 @@ function getLinkType(link) {
         link.destNode.type === nodeType.serviceHtml5Repo
     ) {
         return linkType.deployAppsTo;
+    }
+
+    if (
+        link.sourceNode.type === nodeType.deployer &&
+        link.destNode.type === nodeType.serviceWorkflow
+    ) {
+        return linkType.deployWorkflowDefinition;
     }
 
     return 'use';
