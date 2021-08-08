@@ -88,9 +88,6 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'html5-apps-repo') {
                 return nodeType.serviceHtml5Repo;
             }
-            if (nodeInfo.additionalInfo.service === 'xsuaa') {
-                return nodeType.serviceXsuaa;
-            }
             if (nodeInfo.additionalInfo.service === 'destination') {
                 return nodeType.serviceDestination;
             }
@@ -111,6 +108,9 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
             }
+        }
+        if (nodeInfo.additionalInfo.service === 'xsuaa') {
+            return nodeType.serviceXsuaa;
         }
     }
 
