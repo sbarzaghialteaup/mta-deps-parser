@@ -469,7 +469,7 @@ function setClusterToLinks(mtaGraph) {
                 link.type === linkType.pointToService ||
                 link.type === linkType.pointToUrl
             ) {
-                link.cluster = 'DESTINATION';
+                link.cluster = 'DESTINATIONS';
             }
 
             if (
