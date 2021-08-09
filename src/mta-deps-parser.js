@@ -20,8 +20,8 @@ const nodeType = {
     dbDeployer: 'DB DEPLOYER',
     deployer: 'DEPLOYER',
     html5: 'APP HTML5',
-    serviceHanaInstance: 'HANA CLOUD',
-    serviceHtml5Repo: 'HTML5 REPOSITORY',
+    serviceHanaInstance: 'SERVICE HANA CLOUD',
+    serviceHtml5Repo: 'SERVICE HTML5 REPOSITORY',
     serviceXsuaa: 'SERVICE XSUAA',
     serviceDestination: 'SERVICE DESTINATION',
     serviceApplicationLog: 'SERVICE APPLICATION LOG',
@@ -45,6 +45,7 @@ const linkType = {
     pointToUrl: 'point to url',
     useAppsFrom: 'use apps from',
     deployAppsTo: 'deploy apps to',
+    deployWorkflowDefinition: 'deploy workflow definition to',
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
@@ -55,10 +56,7 @@ const linkType = {
 
 function getNodeType(nodeInfo) {
     if (nodeInfo.additionalInfo.category === nodeCategory.module) {
-        if (
-            nodeInfo.additionalInfo.type === 'nodejs' &&
-            nodeInfo.additionalInfo.module.path.search('approuter') >= 0
-        ) {
+        if (nodeInfo.additionalInfo.module.path?.search('approuter') >= 0) {
             return nodeType.approuter;
         }
         if (nodeInfo.additionalInfo.type === 'nodejs') {
@@ -91,9 +89,6 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'html5-apps-repo') {
                 return nodeType.serviceHtml5Repo;
             }
-            if (nodeInfo.additionalInfo.service === 'xsuaa') {
-                return nodeType.serviceXsuaa;
-            }
             if (nodeInfo.additionalInfo.service === 'destination') {
                 return nodeType.serviceDestination;
             }
@@ -114,6 +109,9 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
             }
+        }
+        if (nodeInfo.additionalInfo.service === 'xsuaa') {
+            return nodeType.serviceXsuaa;
         }
     }
 
@@ -169,6 +167,13 @@ function getLinkType(link) {
         link.destNode.type === nodeType.serviceHtml5Repo
     ) {
         return linkType.deployAppsTo;
+    }
+
+    if (
+        link.sourceNode.type === nodeType.deployer &&
+        link.destNode.type === nodeType.serviceWorkflow
+    ) {
+        return linkType.deployWorkflowDefinition;
     }
 
     return 'use';
@@ -464,7 +469,7 @@ function setClusterToLinks(mtaGraph) {
                 link.type === linkType.pointToService ||
                 link.type === linkType.pointToUrl
             ) {
-                link.cluster = 'DESTINATION';
+                link.cluster = 'DESTINATIONS';
             }
 
             if (
@@ -472,6 +477,10 @@ function setClusterToLinks(mtaGraph) {
                 link.type === linkType.deployApp
             ) {
                 link.cluster = 'HTML5 APPS';
+            }
+
+            if (link.type === linkType.deployWorkflowDefinition) {
+                link.cluster = 'WORKFLOW';
             }
         });
     });
