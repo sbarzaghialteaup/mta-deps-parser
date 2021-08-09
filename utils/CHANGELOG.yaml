@@ -1,0 +1,18 @@
+Unreleased:
+  date: "2021-08-26"
+  "added":
+    - new nodes cluster for workflow
+  "changed":
+    - all services nodes now have the prefix "service"
+    - cluster "DESTINATION" renamed to "DESTINATIONS"
+  "fixed":
+    - approuter node shape not always correct
+    - xsuaa node shape not always correct
+0.0.2:
+  date: "2021-08-01"
+  "added":
+    - File README.md
+0.0.1:
+  date: "2021-08-01"
+  "changed":
+    - Initial release
