@@ -1,6 +1,6 @@
 {
     "name": "mta-deps-parser",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Parse a SAP MTA development descriptor and expose modules, resources and dependencies between them as Javascript objects",
     "type": "commonjs",
     "main": "./dist/index.js",
