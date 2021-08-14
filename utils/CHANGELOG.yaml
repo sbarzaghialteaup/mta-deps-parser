@@ -1,3 +1,13 @@
+0.1.1:
+  date: "2021-08-15"
+  "changed":
+    - Descriptions of HTML5 repository links
+0.1.0:
+  date: "2021-08-14"
+  "changed":
+    - File README.md
+  "fixed":
+    - npm doesn't like release 0.0.x?
 0.0.5:
   date: "2021-08-09"
   "added":

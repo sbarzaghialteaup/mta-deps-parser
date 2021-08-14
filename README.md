@@ -1,7 +1,7 @@
 # Description
 Parse a SAP MTA development descriptor string and expose modules, resources and dependencies between them as Javascript objects.
 
-This package is the base of the [`mta-visual-dep`](https://github.com/sbarzaghialteaup/mta-visual-dep) tool.
+This package is the base of the [`mta-visual-dep`](https://www.npmjs.com/package/mta-visual-dep) tool.
 
 # Install
 

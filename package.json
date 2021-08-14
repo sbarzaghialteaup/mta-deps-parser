@@ -1,6 +1,6 @@
 {
     "name": "mta-deps-parser",
-    "version": "0.0.5",
+    "version": "0.1.1",
     "description": "Parse a SAP MTA development descriptor and expose modules, resources and dependencies between them as Javascript objects",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -26,7 +26,7 @@
         "prepare": "husky install",
         "build": "npm run generate-changelog && rollup -c config/rollup.node-config.js",
         "generate-changelog": "node utils/changelog-generator.js",
-        "publish-npm": "npm build && npm run publish"
+        "publish-npm": "npm run build && npm publish"
     },
     "author": "Samuele Barzaghi <sambarza@gmail.com>",
     "repository": "github:sbarzaghialteaup/mta-deps-parser",
