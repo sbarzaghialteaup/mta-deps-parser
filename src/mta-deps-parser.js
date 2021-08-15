@@ -307,6 +307,10 @@ function extractModulesRequirements(mtaGraph) {
             moduleNode.links.push({
                 name: require.name,
             });
+
+            if (require.parameters?.['content-target']) {
+                moduleNode.contentTarget = require;
+            }
         });
     });
 }
