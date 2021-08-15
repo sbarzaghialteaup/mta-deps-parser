@@ -4,6 +4,7 @@
 
 const YAML = require('yaml');
 const { exit } = require('process');
+const assert = require('assert');
 
 const nodeCategory = {
     module: 'module',
@@ -65,14 +66,18 @@ function getNodeType(nodeInfo) {
         if (nodeInfo.additionalInfo.type === 'hdb') {
             return nodeType.dbDeployer;
         }
-        if (
-            nodeInfo.additionalInfo.type === 'com.sap.application.content' &&
-            nodeInfo.additionalInfo.module.path?.search('portal') >= 0
-        ) {
-            return nodeType.portalDeployer;
-        }
         if (nodeInfo.additionalInfo.type === 'com.sap.application.content') {
+            assert(
+                typeof nodeInfo.contentTarget === 'object',
+                `Module of type deployer without target content: ${nodeInfo.name} ${nodeInfo.contentTarget}`
+            );
+            switch (nodeInfo.contentTarget.type) {
+                case nodeType.servicePortal:
+            return nodeType.portalDeployer;
+                default:
+                    console.log(nodeInfo.contentTarget.type);
             return nodeType.deployer;
+            }
         }
         if (nodeInfo.additionalInfo.type === 'html5') {
             return nodeType.html5;
@@ -270,8 +275,6 @@ function extractModules(mta, mtaGraph) {
             },
         };
 
-        newNode.type = getNodeType(newNode);
-
         mtaGraph.addNode(newNode);
     });
 }
@@ -326,6 +329,16 @@ function extractModulesRequirements(mtaGraph) {
                     mtaGraph.indexServiceName[require.name];
             }
         });
+    });
+}
+
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
+function moduleNodesTypeDetermination(mtaGraph) {
+    mtaGraph.moduleNodes.forEach((moduleNode) => {
+        moduleNode.type = getNodeType(moduleNode);
     });
 }
 
@@ -573,15 +586,17 @@ function parse(str) {
 
     const mta = YAML.parse(str);
 
+    extractResources(mta, mtaGraph);
+
     extractModules(mta, mtaGraph);
 
     extractPropertySets(mtaGraph);
 
     extractModulesRequirements(mtaGraph);
 
-    extractEnviromentVariables(mtaGraph);
+    moduleNodesTypeDetermination(mtaGraph);
 
-    extractResources(mta, mtaGraph);
+    extractEnviromentVariables(mtaGraph);
 
     setLinksType(mtaGraph);
 
