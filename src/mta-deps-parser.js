@@ -322,7 +322,8 @@ function extractModulesRequirements(mtaGraph) {
             });
 
             if (require.parameters?.['content-target']) {
-                moduleNode.contentTarget = require;
+                moduleNode.contentTarget =
+                    mtaGraph.indexServiceName[require.name];
             }
         });
     });
