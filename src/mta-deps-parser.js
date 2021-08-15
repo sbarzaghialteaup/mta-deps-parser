@@ -272,7 +272,7 @@ function extractModules(mta, mtaGraph) {
 }
 
 function extractPropertySets(mtaGraph) {
-    mtaGraph.nodes.forEach((moduleNode) => {
+    mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.provides?.forEach((provide) => {
             mtaGraph.propertySets[provide.name] = moduleNode;
 
