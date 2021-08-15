@@ -19,6 +19,7 @@ const nodeType = {
     approuter: 'APPROUTER',
     portalDeployer: 'PORTAL DEPLOYER',
     dbDeployer: 'DB DEPLOYER',
+    appsDeployer: 'APPS DEPLOYER',
     deployer: 'DEPLOYER',
     html5: 'APP HTML5',
     serviceHanaInstance: 'SERVICE HANA CLOUD',
@@ -74,8 +75,12 @@ function getNodeType(nodeInfo) {
             switch (nodeInfo.contentTarget.type) {
                 case nodeType.servicePortal:
             return nodeType.portalDeployer;
+                case nodeType.serviceHtml5Repo:
+                    return nodeType.appsDeployer;
                 default:
-                    console.log(nodeInfo.contentTarget.type);
+                    console.log(
+                        `Using the generic deployer for the service "${nodeInfo.contentTarget.type}",\nplease notify this to the mta-deps-parser package maintainer with:\nhttps://github.com/sbarzaghialteaup/mta-deps-parser/issues/new`
+                    );
             return nodeType.deployer;
             }
         }
@@ -168,7 +173,7 @@ function getLinkType(link) {
     }
 
     if (
-        link.sourceNode.type === nodeType.deployer &&
+        link.sourceNode.type === nodeType.appsDeployer &&
         link.destNode.type === nodeType.serviceHtml5Repo
     ) {
         return linkType.deployAppsTo;
@@ -453,9 +458,15 @@ function setLinksType(mtaGraph) {
  */
 function extractDestinationsFromModules(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
-        if (node.type === nodeType.deployer) {
+        switch (node.type) {
+            case nodeType.deployer:
             lookForDeployedDestinations(node, mtaGraph);
+                break;
+            case nodeType.appsDeployer:
             lookForDeployedApps(node);
+                break;
+            default:
+                break;
         }
     });
 }
