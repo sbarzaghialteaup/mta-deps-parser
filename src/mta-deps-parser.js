@@ -254,6 +254,11 @@ function lookForDeployedApps(node) {
     );
 }
 
+/**
+ *
+ * @param {*} mta
+ * @param {MtaGraph} mtaGraph
+ */
 function extractModules(mta, mtaGraph) {
     mta.modules.forEach((module) => {
         const newNode = {
@@ -271,6 +276,10 @@ function extractModules(mta, mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractPropertySets(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.provides?.forEach((provide) => {
@@ -297,6 +306,10 @@ function extractPropertySets(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractModulesRequirements(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.requires?.forEach((require) => {
@@ -315,6 +328,10 @@ function extractModulesRequirements(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractEnviromentVariables(mtaGraph) {
     function extractLinksToProperties(require) {
         const links = [];
@@ -366,6 +383,11 @@ function extractEnviromentVariables(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {*} mta
+ * @param {MtaGraph} mtaGraph
+ */
 function extractResources(mta, mtaGraph) {
     mta.resources.forEach((resource) => {
         const newNode = {
@@ -384,6 +406,10 @@ function extractResources(mta, mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function setLinksType(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         node.links
@@ -407,6 +433,10 @@ function setLinksType(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractDestinationsFromModules(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         if (node.type === nodeType.deployer) {
@@ -416,6 +446,10 @@ function extractDestinationsFromModules(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractDestinationsFromResources(mtaGraph) {
     mtaGraph.resourceNodes.forEach((node) => {
         node.additionalInfo.resource.parameters?.config?.init_data?.instance?.destinations?.forEach(
@@ -456,6 +490,10 @@ function extractDestinationsFromResources(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function setClusterToLinks(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         node.links?.forEach((link) => {
