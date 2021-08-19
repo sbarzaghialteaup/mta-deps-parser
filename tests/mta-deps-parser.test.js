@@ -1,7 +1,7 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-console */
 const fs = require('fs');
-const MtaGraph = require('../dist/index');
+const MtaGraph = require('../src/mta-deps-parser');
 
 let mtaGraph;
 
