@@ -15,20 +15,22 @@ const nodeCategory = {
 };
 
 const nodeType = {
-    nodejs: 'CAP SERVICE',
+    nodejs: 'CAP',
     approuter: 'APPROUTER',
     portalDeployer: 'PORTAL DEPLOYER',
     dbDeployer: 'DB DEPLOYER',
     appsDeployer: 'APPS DEPLOYER',
+    destinationsDeployer: 'DESTINATIONS DEPLOYER',
     deployer: 'DEPLOYER',
     html5: 'APP HTML5',
     serviceHanaInstance: 'SERVICE HANA CLOUD',
     serviceHtml5Repo: 'SERVICE HTML5 REPOSITORY',
-    serviceXsuaa: 'SERVICE XSUAA',
+    serviceXsuaa: '👤 SERVICE XSUAA',
     serviceDestination: 'SERVICE DESTINATION',
-    serviceApplicationLog: 'SERVICE APPLICATION LOG',
+    serviceApplicationLog: '🕮 SERVICE APPLICATION LOG',
     servicePortal: 'SERVICE PORTAL',
     serviceWorkflow: 'SERVICE WORKFLOW',
+    serviceTheming: 'SERVICE THEMING',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
     property: 'PROPERTY',
@@ -56,6 +58,27 @@ const linkType = {
     useMtaProperty: 'use MTA property',
 };
 
+function getDeployerType(nodeInfo) {
+    assert(
+        typeof nodeInfo.contentTarget === 'object',
+        `Module of type deployer without target content: ${nodeInfo.name} ${nodeInfo.contentTarget}`
+    );
+
+    switch (nodeInfo.contentTarget.type) {
+        case nodeType.servicePortal:
+            return nodeType.portalDeployer;
+        case nodeType.serviceHtml5Repo:
+            return nodeType.appsDeployer;
+        case nodeType.serviceDestination:
+            return nodeType.destinationsDeployer;
+        default:
+            console.log(
+                `Using the generic deployer for the service "${nodeInfo.contentTarget.type}",\nplease notify this to the mta-deps-parser package maintainer with:\nhttps://github.com/sbarzaghialteaup/mta-deps-parser/issues/new`
+            );
+            return nodeType.deployer;
+    }
+}
+
 function getNodeType(nodeInfo) {
     if (nodeInfo.additionalInfo.category === nodeCategory.module) {
         if (nodeInfo.additionalInfo.module.path?.search('approuter') >= 0) {
@@ -68,21 +91,7 @@ function getNodeType(nodeInfo) {
             return nodeType.dbDeployer;
         }
         if (nodeInfo.additionalInfo.type === 'com.sap.application.content') {
-            assert(
-                typeof nodeInfo.contentTarget === 'object',
-                `Module of type deployer without target content: ${nodeInfo.name} ${nodeInfo.contentTarget}`
-            );
-            switch (nodeInfo.contentTarget.type) {
-                case nodeType.servicePortal:
-            return nodeType.portalDeployer;
-                case nodeType.serviceHtml5Repo:
-                    return nodeType.appsDeployer;
-                default:
-                    console.log(
-                        `Using the generic deployer for the service "${nodeInfo.contentTarget.type}",\nplease notify this to the mta-deps-parser package maintainer with:\nhttps://github.com/sbarzaghialteaup/mta-deps-parser/issues/new`
-                    );
-            return nodeType.deployer;
-            }
+            return getDeployerType(nodeInfo);
         }
         if (nodeInfo.additionalInfo.type === 'html5') {
             return nodeType.html5;
@@ -110,6 +119,9 @@ function getNodeType(nodeInfo) {
             }
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
+            }
+            if (nodeInfo.additionalInfo.service === 'theming') {
+                return nodeType.serviceTheming;
             }
         }
 
@@ -148,7 +160,7 @@ function getLinkType(link) {
     }
 
     if (
-        link.sourceNode.type === nodeType.deployer &&
+        link.sourceNode.type === nodeType.destinationsDeployer &&
         link.destNode.type === nodeType.serviceDestination
     ) {
         return linkType.createDestinationService;
@@ -250,6 +262,12 @@ function lookForDeployedDestinations(deployerNode, mtaGraph) {
 
     deployerNode.additionalInfo.module?.parameters?.content?.subaccount?.destinations?.forEach(
         addNodeForDestination(linkType.defineDestinationInSubaccount)
+    );
+
+    deployerNode.additionalInfo.module?.requires?.forEach((serviceRequired) =>
+        serviceRequired.parameters?.content?.subaccount?.destinations?.forEach(
+            addNodeForDestination(linkType.defineDestinationInSubaccount)
+        )
     );
 }
 
@@ -459,11 +477,11 @@ function setLinksType(mtaGraph) {
 function extractDestinationsFromModules(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         switch (node.type) {
-            case nodeType.deployer:
-            lookForDeployedDestinations(node, mtaGraph);
+            case nodeType.destinationsDeployer:
+                lookForDeployedDestinations(node, mtaGraph);
                 break;
             case nodeType.appsDeployer:
-            lookForDeployedApps(node);
+                lookForDeployedApps(node);
                 break;
             default:
                 break;
@@ -621,6 +639,6 @@ function parse(str) {
 }
 
 module.exports.parse = parse;
-module.exports.categories = nodeCategory;
+module.exports.nodeCategory = nodeCategory;
 module.exports.nodeType = nodeType;
 module.exports.linkType = linkType;
