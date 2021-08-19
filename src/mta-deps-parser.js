@@ -62,7 +62,7 @@ const linkType = {
 function getDeployerType(nodeInfo) {
     assert(
         typeof nodeInfo.contentTarget === 'object',
-        `Module of type deployer without target content: ${nodeInfo.name} ${nodeInfo.contentTarget}`
+        `Module of type deployer without target content, module: ${nodeInfo.name} content-target: ${nodeInfo.contentTarget}`
     );
 
     switch (nodeInfo.contentTarget.type) {
