@@ -31,6 +31,7 @@ const nodeType = {
     servicePortal: 'SERVICE PORTAL',
     serviceWorkflow: 'SERVICE WORKFLOW',
     serviceTheming: 'SERVICE THEMING',
+    userService: 'USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
     property: 'PROPERTY',
@@ -128,6 +129,9 @@ function getNodeType(nodeInfo) {
         if (
             nodeInfo.additionalInfo.type === 'org.cloudfoundry.existing-service'
         ) {
+            if (!nodeInfo.additionalInfo.service) {
+                return nodeType.userService;
+            }
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
             }
