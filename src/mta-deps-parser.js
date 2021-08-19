@@ -622,13 +622,13 @@ class MtaGraph {
         this.linksIndex[newNode.name] = newNode;
 
         if (newNode.additionalInfo.category === nodeCategory.resource) {
-            const serviceName = newNode.additionalInfo.resource?.parameters[
-                'service-name'
-            ]
-                ? newNode.additionalInfo.resource?.parameters['service-name']
-                : newNode.name;
+            this.indexServiceName[newNode.name] = newNode;
 
-            this.indexServiceName[serviceName] = newNode;
+            const serviceName =
+                newNode.additionalInfo.resource?.parameters['service-name'];
+            if (serviceName) {
+                this.indexServiceName[serviceName] = newNode;
+            }
         }
     }
 
