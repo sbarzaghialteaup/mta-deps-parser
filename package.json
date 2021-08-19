@@ -22,7 +22,7 @@
     "scripts": {
         "lint": "eslint ./src",
         "postlint": "echo ✅ lint valid",
-        "test": "npm run lint && npm run build && jest",
+        "test": "npm run lint && jest",
         "prepare": "husky install",
         "build": "npm run generate-changelog && rollup -c config/rollup.node-config.js",
         "generate-changelog": "node utils/changelog-generator.js",
