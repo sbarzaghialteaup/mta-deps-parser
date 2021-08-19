@@ -426,7 +426,7 @@ function extractEnviromentVariables(mtaGraph) {
  * @param {MtaGraph} mtaGraph
  */
 function extractResources(mta, mtaGraph) {
-    mta.resources.forEach((resource) => {
+    mta.resources?.forEach((resource) => {
         const newNode = {
             name: resource.name,
             additionalInfo: {
