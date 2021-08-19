@@ -332,6 +332,37 @@ function extractPropertySets(mtaGraph) {
     });
 }
 
+/*
+ * @param {MtaGraph} mtaGraph
+ */
+function extractPropertiesFromResources(mtaGraph) {
+    mtaGraph.resourceNodes.forEach((resourceNode) => {
+        if (resourceNode.additionalInfo.resource.properties) {
+            mtaGraph.propertySets[resourceNode.name] = resourceNode;
+
+            Object.entries(
+                resourceNode.additionalInfo.resource.properties
+            ).forEach(([key, value]) => {
+                const newPropertyNode = {
+                    type: nodeType.property,
+                    name: `${resourceNode.name}:${key}`,
+                    value,
+                    additionalInfo: {
+                        category: nodeCategory.property,
+                    },
+                };
+
+                mtaGraph.addNode(newPropertyNode);
+
+                resourceNode.links.push({
+                    type: linkType.defineMtaProperty,
+                    name: newPropertyNode.name,
+                });
+            });
+        }
+    });
+}
+
 /**
  *
  * @param {MtaGraph} mtaGraph
@@ -339,7 +370,7 @@ function extractPropertySets(mtaGraph) {
 function extractModulesRequirements(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.requires?.forEach((require) => {
-            if (mtaGraph.propertySets[require.name]) {
+            if (require.group) {
                 return;
             }
 
@@ -394,6 +425,10 @@ function extractEnviromentVariables(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.requires?.forEach((require) => {
             if (!mtaGraph.propertySets[require.name]) {
+                return;
+            }
+
+            if (!require.group) {
                 return;
             }
 
@@ -452,10 +487,6 @@ function setLinksType(mtaGraph) {
         node.links
             ?.filter((link) => !link.type)
             .forEach((link) => {
-                if (mtaGraph.propertySets[link.name]) {
-                    return;
-                }
-
                 link.sourceNode = node;
                 link.destNode = mtaGraph.linksIndex[link.name];
 
@@ -618,6 +649,8 @@ function parse(str) {
     extractResources(mta, mtaGraph);
 
     extractModules(mta, mtaGraph);
+
+    extractPropertiesFromResources(mtaGraph);
 
     extractPropertySets(mtaGraph);
 
