@@ -4,6 +4,7 @@
 
 const YAML = require('yaml');
 const { exit } = require('process');
+const assert = require('assert');
 
 const nodeCategory = {
     module: 'module',
@@ -14,19 +15,26 @@ const nodeCategory = {
 };
 
 const nodeType = {
-    nodejs: 'CAP SERVICE',
+    nodejs: 'CAP',
     approuter: 'APPROUTER',
     portalDeployer: 'PORTAL DEPLOYER',
     dbDeployer: 'DB DEPLOYER',
+    appsDeployer: 'APPS DEPLOYER',
+    destinationsDeployer: 'DESTINATIONS DEPLOYER',
     deployer: 'DEPLOYER',
     html5: 'APP HTML5',
     serviceHanaInstance: 'SERVICE HANA CLOUD',
     serviceHtml5Repo: 'SERVICE HTML5 REPOSITORY',
-    serviceXsuaa: 'SERVICE XSUAA',
+    serviceXsuaa: '🔑 SERVICE XSUAA',
     serviceDestination: 'SERVICE DESTINATION',
-    serviceApplicationLog: 'SERVICE APPLICATION LOG',
+    serviceApplicationLog: '📃 SERVICE APPLICATION LOG',
     servicePortal: 'SERVICE PORTAL',
     serviceWorkflow: 'SERVICE WORKFLOW',
+    serviceTheming: 'SERVICE THEMING',
+    serviceAutoscaler: '📈 SERVICE AUTOSCALER',
+    serviceConnectivity: 'SERVICE CONNECTIVITY',
+    serviceJobScheduler: '🕑 SERVICE JOB SCHEDULER',
+    userService: '👤 USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
     property: 'PROPERTY',
@@ -46,6 +54,9 @@ const linkType = {
     useAppsFrom: 'use apps from\nHTML5 repository',
     deployAppsTo: 'deploy apps to\nHTML5 repository',
     deployWorkflowDefinition: 'deploy workflow definition to',
+    autoscaledBy: 'autoscaled by',
+    useConnectivity: 'use connectivity',
+    scheduleJobsIn: 'schedule jobs in',
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
@@ -53,6 +64,27 @@ const linkType = {
     defineEnvVariable: 'define enviroment\nvariable',
     useMtaProperty: 'use MTA property',
 };
+
+function getDeployerType(nodeInfo) {
+    assert(
+        typeof nodeInfo.contentTarget === 'object',
+        `Module of type deployer without target content, module: ${nodeInfo.name} content-target: ${nodeInfo.contentTarget}`
+    );
+
+    switch (nodeInfo.contentTarget.type) {
+        case nodeType.servicePortal:
+            return nodeType.portalDeployer;
+        case nodeType.serviceHtml5Repo:
+            return nodeType.appsDeployer;
+        case nodeType.serviceDestination:
+            return nodeType.destinationsDeployer;
+        default:
+            console.log(
+                `Using the generic deployer for the service "${nodeInfo.contentTarget.type}",\nplease notify this to the mta-deps-parser package maintainer with:\nhttps://github.com/sbarzaghialteaup/mta-deps-parser/issues/new`
+            );
+            return nodeType.deployer;
+    }
+}
 
 function getNodeType(nodeInfo) {
     if (nodeInfo.additionalInfo.category === nodeCategory.module) {
@@ -65,14 +97,8 @@ function getNodeType(nodeInfo) {
         if (nodeInfo.additionalInfo.type === 'hdb') {
             return nodeType.dbDeployer;
         }
-        if (
-            nodeInfo.additionalInfo.type === 'com.sap.application.content' &&
-            nodeInfo.additionalInfo.module.path?.search('portal') >= 0
-        ) {
-            return nodeType.portalDeployer;
-        }
         if (nodeInfo.additionalInfo.type === 'com.sap.application.content') {
-            return nodeType.deployer;
+            return getDeployerType(nodeInfo);
         }
         if (nodeInfo.additionalInfo.type === 'html5') {
             return nodeType.html5;
@@ -101,16 +127,35 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
             }
+            if (nodeInfo.additionalInfo.service === 'theming') {
+                return nodeType.serviceTheming;
+            }
+            if (nodeInfo.additionalInfo.service === 'autoscaler') {
+                return nodeType.serviceAutoscaler;
+            }
+            if (nodeInfo.additionalInfo.service === 'connectivity') {
+                return nodeType.serviceConnectivity;
+            }
+            if (nodeInfo.additionalInfo.service === 'jobscheduler') {
+                return nodeType.serviceJobScheduler;
+            }
         }
 
         if (
             nodeInfo.additionalInfo.type === 'org.cloudfoundry.existing-service'
         ) {
+            if (!nodeInfo.additionalInfo.service) {
+                return nodeType.userService;
+            }
             if (nodeInfo.additionalInfo.service === 'workflow') {
                 return nodeType.serviceWorkflow;
             }
         }
-        if (nodeInfo.additionalInfo.service === 'xsuaa') {
+
+        if (
+            nodeInfo.additionalInfo.service === 'xsuaa' ||
+            nodeInfo.additionalInfo.type === 'com.sap.xs.uaa'
+        ) {
             return nodeType.serviceXsuaa;
         }
     }
@@ -138,7 +183,7 @@ function getLinkType(link) {
     }
 
     if (
-        link.sourceNode.type === nodeType.deployer &&
+        link.sourceNode.type === nodeType.destinationsDeployer &&
         link.destNode.type === nodeType.serviceDestination
     ) {
         return linkType.createDestinationService;
@@ -163,7 +208,7 @@ function getLinkType(link) {
     }
 
     if (
-        link.sourceNode.type === nodeType.deployer &&
+        link.sourceNode.type === nodeType.appsDeployer &&
         link.destNode.type === nodeType.serviceHtml5Repo
     ) {
         return linkType.deployAppsTo;
@@ -174,6 +219,18 @@ function getLinkType(link) {
         link.destNode.type === nodeType.serviceWorkflow
     ) {
         return linkType.deployWorkflowDefinition;
+    }
+
+    if (link.destNode.type === nodeType.serviceAutoscaler) {
+        return linkType.autoscaledBy;
+    }
+
+    if (link.destNode.type === nodeType.serviceConnectivity) {
+        return linkType.useConnectivity;
+    }
+
+    if (link.destNode.type === nodeType.serviceJobScheduler) {
+        return linkType.scheduleJobsIn;
     }
 
     return 'use';
@@ -241,6 +298,12 @@ function lookForDeployedDestinations(deployerNode, mtaGraph) {
     deployerNode.additionalInfo.module?.parameters?.content?.subaccount?.destinations?.forEach(
         addNodeForDestination(linkType.defineDestinationInSubaccount)
     );
+
+    deployerNode.additionalInfo.module?.requires?.forEach((serviceRequired) =>
+        serviceRequired.parameters?.content?.subaccount?.destinations?.forEach(
+            addNodeForDestination(linkType.defineDestinationInSubaccount)
+        )
+    );
 }
 
 function lookForDeployedApps(node) {
@@ -254,6 +317,11 @@ function lookForDeployedApps(node) {
     );
 }
 
+/**
+ *
+ * @param {*} mta
+ * @param {MtaGraph} mtaGraph
+ */
 function extractModules(mta, mtaGraph) {
     mta.modules.forEach((module) => {
         const newNode = {
@@ -265,14 +333,16 @@ function extractModules(mta, mtaGraph) {
             },
         };
 
-        newNode.type = getNodeType(newNode);
-
         mtaGraph.addNode(newNode);
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractPropertySets(mtaGraph) {
-    mtaGraph.nodes.forEach((moduleNode) => {
+    mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.provides?.forEach((provide) => {
             mtaGraph.propertySets[provide.name] = moduleNode;
 
@@ -297,20 +367,74 @@ function extractPropertySets(mtaGraph) {
     });
 }
 
+/*
+ * @param {MtaGraph} mtaGraph
+ */
+function extractPropertiesFromResources(mtaGraph) {
+    mtaGraph.resourceNodes.forEach((resourceNode) => {
+        if (resourceNode.additionalInfo.resource.properties) {
+            mtaGraph.propertySets[resourceNode.name] = resourceNode;
+
+            Object.entries(
+                resourceNode.additionalInfo.resource.properties
+            ).forEach(([key, value]) => {
+                const newPropertyNode = {
+                    type: nodeType.property,
+                    name: `${resourceNode.name}:${key}`,
+                    value,
+                    additionalInfo: {
+                        category: nodeCategory.property,
+                    },
+                };
+
+                mtaGraph.addNode(newPropertyNode);
+
+                resourceNode.links.push({
+                    type: linkType.defineMtaProperty,
+                    name: newPropertyNode.name,
+                });
+            });
+        }
+    });
+}
+
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractModulesRequirements(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.additionalInfo.module.requires?.forEach((require) => {
-            if (mtaGraph.propertySets[require.name]) {
+            if (require.group) {
                 return;
             }
 
             moduleNode.links.push({
                 name: require.name,
             });
+
+            if (require.parameters?.['content-target']) {
+                moduleNode.contentTarget =
+                    mtaGraph.indexServiceName[require.name];
+            }
         });
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
+function moduleNodesTypeDetermination(mtaGraph) {
+    mtaGraph.moduleNodes.forEach((moduleNode) => {
+        moduleNode.type = getNodeType(moduleNode);
+    });
+}
+
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractEnviromentVariables(mtaGraph) {
     function extractLinksToProperties(require) {
         const links = [];
@@ -339,6 +463,10 @@ function extractEnviromentVariables(mtaGraph) {
                 return;
             }
 
+            if (!require.group) {
+                return;
+            }
+
             const newEnvVariableNode = {
                 type: nodeType.enviromentVariable,
                 name: require.group,
@@ -362,14 +490,19 @@ function extractEnviromentVariables(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {*} mta
+ * @param {MtaGraph} mtaGraph
+ */
 function extractResources(mta, mtaGraph) {
-    mta.resources.forEach((resource) => {
+    mta.resources?.forEach((resource) => {
         const newNode = {
             name: resource.name,
             additionalInfo: {
                 category: nodeCategory.resource,
                 type: resource.type,
-                service: resource.parameters.service,
+                service: resource.parameters?.service,
                 resource,
             },
         };
@@ -380,15 +513,15 @@ function extractResources(mta, mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function setLinksType(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         node.links
             ?.filter((link) => !link.type)
             .forEach((link) => {
-                if (mtaGraph.propertySets[link.name]) {
-                    return;
-                }
-
                 link.sourceNode = node;
                 link.destNode = mtaGraph.linksIndex[link.name];
 
@@ -403,15 +536,29 @@ function setLinksType(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractDestinationsFromModules(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
-        if (node.type === nodeType.deployer) {
-            lookForDeployedDestinations(node, mtaGraph);
-            lookForDeployedApps(node);
+        switch (node.type) {
+            case nodeType.destinationsDeployer:
+                lookForDeployedDestinations(node, mtaGraph);
+                break;
+            case nodeType.appsDeployer:
+                lookForDeployedApps(node);
+                break;
+            default:
+                break;
         }
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function extractDestinationsFromResources(mtaGraph) {
     mtaGraph.resourceNodes.forEach((node) => {
         node.additionalInfo.resource.parameters?.config?.init_data?.instance?.destinations?.forEach(
@@ -452,6 +599,10 @@ function extractDestinationsFromResources(mtaGraph) {
     });
 }
 
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function setClusterToLinks(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         node.links?.forEach((link) => {
@@ -501,10 +652,14 @@ class MtaGraph {
         this.nodes.push(newNode);
         this.linksIndex[newNode.name] = newNode;
 
-        if (newNode.additionalInfo.resource?.parameters['service-name']) {
-            this.indexServiceName[
-                newNode.additionalInfo.resource.parameters['service-name']
-            ] = newNode;
+        if (newNode.additionalInfo.category === nodeCategory.resource) {
+            this.indexServiceName[newNode.name] = newNode;
+
+            const serviceName =
+                newNode.additionalInfo.resource?.parameters?.['service-name'];
+            if (serviceName) {
+                this.indexServiceName[serviceName] = newNode;
+            }
         }
     }
 
@@ -526,15 +681,19 @@ function parse(str) {
 
     const mta = YAML.parse(str);
 
+    extractResources(mta, mtaGraph);
+
     extractModules(mta, mtaGraph);
+
+    extractPropertiesFromResources(mtaGraph);
 
     extractPropertySets(mtaGraph);
 
     extractModulesRequirements(mtaGraph);
 
-    extractEnviromentVariables(mtaGraph);
+    moduleNodesTypeDetermination(mtaGraph);
 
-    extractResources(mta, mtaGraph);
+    extractEnviromentVariables(mtaGraph);
 
     setLinksType(mtaGraph);
 
@@ -548,6 +707,6 @@ function parse(str) {
 }
 
 module.exports.parse = parse;
-module.exports.categories = nodeCategory;
+module.exports.nodeCategory = nodeCategory;
 module.exports.nodeType = nodeType;
 module.exports.linkType = linkType;

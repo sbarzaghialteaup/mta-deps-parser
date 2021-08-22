@@ -1,7 +1,7 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-console */
 const fs = require('fs');
-const MtaGraph = require('../dist/index');
+const MtaGraph = require('../src/mta-deps-parser');
 
 let mtaGraph;
 
@@ -24,7 +24,7 @@ beforeAll(async () => {
 });
 
 test('Number of nodes', async () => {
-    expect(mtaGraph.nodes.length).toBe(30);
+    expect(mtaGraph.nodes.length).toBe(31);
 });
 test('Number of modules', async () => {
     expect(mtaGraph.moduleNodes.length).toBe(20);
@@ -33,10 +33,10 @@ test('Number of resources', async () => {
     expect(mtaGraph.resourceNodes.length).toBe(8);
 });
 test('Number of property sets', async () => {
-    expect(Object.values(mtaGraph.propertySets).length).toBe(1);
+    expect(Object.values(mtaGraph.propertySets).length).toBe(2);
 });
 test('Number of links', async () => {
-    expect(countLinks()).toBe(34);
+    expect(countLinks()).toBe(35);
 });
 test('Number of html5 apps', async () => {
     expect(
