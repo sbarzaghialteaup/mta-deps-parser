@@ -471,7 +471,7 @@ function extractResources(mta, mtaGraph) {
             additionalInfo: {
                 category: nodeCategory.resource,
                 type: resource.type,
-                service: resource.parameters.service,
+                service: resource.parameters?.service,
                 resource,
             },
         };
@@ -625,7 +625,7 @@ class MtaGraph {
             this.indexServiceName[newNode.name] = newNode;
 
             const serviceName =
-                newNode.additionalInfo.resource?.parameters['service-name'];
+                newNode.additionalInfo.resource?.parameters?.['service-name'];
             if (serviceName) {
                 this.indexServiceName[serviceName] = newNode;
             }
