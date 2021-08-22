@@ -31,6 +31,9 @@ const nodeType = {
     servicePortal: 'SERVICE PORTAL',
     serviceWorkflow: 'SERVICE WORKFLOW',
     serviceTheming: 'SERVICE THEMING',
+    serviceAutoscaler: 'SERVICE AUTOSCALER',
+    serviceConnectivity: 'SERVICE CONNECTIVITY',
+    serviceJobScheduler: 'SERVICE JOB SCHEDULER',
     userService: 'USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
@@ -51,6 +54,9 @@ const linkType = {
     useAppsFrom: 'use apps from\nHTML5 repository',
     deployAppsTo: 'deploy apps to\nHTML5 repository',
     deployWorkflowDefinition: 'deploy workflow definition to',
+    autoscaledBy: 'autoscaled by',
+    useConnectivity: 'use connectivity',
+    scheduleJobsIn: 'schedule jobs in',
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
@@ -124,6 +130,15 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'theming') {
                 return nodeType.serviceTheming;
             }
+            if (nodeInfo.additionalInfo.service === 'autoscaler') {
+                return nodeType.serviceAutoscaler;
+            }
+            if (nodeInfo.additionalInfo.service === 'connectivity') {
+                return nodeType.serviceConnectivity;
+            }
+            if (nodeInfo.additionalInfo.service === 'jobscheduler') {
+                return nodeType.serviceJobScheduler;
+            }
         }
 
         if (
@@ -136,7 +151,11 @@ function getNodeType(nodeInfo) {
                 return nodeType.serviceWorkflow;
             }
         }
-        if (nodeInfo.additionalInfo.service === 'xsuaa') {
+
+        if (
+            nodeInfo.additionalInfo.service === 'xsuaa' ||
+            nodeInfo.additionalInfo.type === 'com.sap.xs.uaa'
+        ) {
             return nodeType.serviceXsuaa;
         }
     }
@@ -200,6 +219,18 @@ function getLinkType(link) {
         link.destNode.type === nodeType.serviceWorkflow
     ) {
         return linkType.deployWorkflowDefinition;
+    }
+
+    if (link.destNode.type === nodeType.serviceAutoscaler) {
+        return linkType.autoscaledBy;
+    }
+
+    if (link.destNode.type === nodeType.serviceConnectivity) {
+        return linkType.useConnectivity;
+    }
+
+    if (link.destNode.type === nodeType.serviceJobScheduler) {
+        return linkType.scheduleJobsIn;
     }
 
     return 'use';
