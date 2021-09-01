@@ -34,6 +34,7 @@ const nodeType = {
     serviceAutoscaler: '📈 SERVICE AUTOSCALER',
     serviceConnectivity: 'SERVICE CONNECTIVITY',
     serviceJobScheduler: '🕑 SERVICE JOB SCHEDULER',
+    saasRegistry: 'SAAS REGISTRY',
     userService: '👤 USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
@@ -140,6 +141,9 @@ function getNodeType(nodeInfo) {
             }
             if (nodeInfo.additionalInfo.service === 'jobscheduler') {
                 return nodeType.serviceJobScheduler;
+            }
+            if (nodeInfo.additionalInfo.service === 'saas-registry') {
+                return nodeType.saasRegistry;
             }
         }
 
@@ -443,6 +447,46 @@ function extractModulesRequirements(mtaGraph) {
  *
  * @param {MtaGraph} mtaGraph
  */
+function extractResourceConfiguration(mtaGraph) {
+    function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
+        const regex = /~{(.*?)\}/g;
+        const m = [...parameterValue.matchAll(regex)];
+
+        m.forEach((property) => {
+            const [propertiesSet, propertyName] = property[1].split('/');
+            console.log(propertiesSet, propertyName);
+
+            resourceNode.links.push({
+                type: linkType.useMtaProperty,
+                name: `${propertiesSet}:${propertyName}`,
+                label: linkLabel,
+            });
+        });
+    }
+
+    mtaGraph.resourceNodes.forEach((resourceNode) => {
+        if (resourceNode.type === nodeType.saasRegistry) {
+            createLinkForParameter(
+                resourceNode,
+                resourceNode.additionalInfo.resource.parameters.config.appUrls
+                    .onSubscription,
+                'on subscription'
+            );
+
+            createLinkForParameter(
+                resourceNode,
+                resourceNode.additionalInfo.resource.parameters.config.appUrls
+                    .getDependencies,
+                'on dependencies'
+            );
+        }
+    });
+}
+
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
 function moduleNodesTypeDetermination(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.type = getNodeType(moduleNode);
@@ -708,6 +752,8 @@ function parse(str) {
     extractPropertySets(mtaGraph);
 
     extractModulesRequirements(mtaGraph);
+
+    extractResourceConfiguration(mtaGraph);
 
     moduleNodesTypeDetermination(mtaGraph);
 
