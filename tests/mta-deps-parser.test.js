@@ -24,7 +24,7 @@ beforeAll(async () => {
 });
 
 test('Number of nodes', async () => {
-    expect(mtaGraph.nodes.length).toBe(31);
+    expect(mtaGraph.nodes.length).toBe(32);
 });
 test('Number of modules', async () => {
     expect(mtaGraph.moduleNodes.length).toBe(20);
@@ -36,7 +36,7 @@ test('Number of property sets', async () => {
     expect(Object.values(mtaGraph.propertySets).length).toBe(2);
 });
 test('Number of links', async () => {
-    expect(countLinks()).toBe(35);
+    expect(countLinks()).toBe(36);
 });
 test('Number of html5 apps', async () => {
     expect(

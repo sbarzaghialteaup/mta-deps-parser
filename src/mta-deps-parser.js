@@ -37,6 +37,7 @@ const nodeType = {
     userService: '👤 USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
+    propertiesSet: 'PROPERTIES SET',
     property: 'PROPERTY',
     enviromentVariable: 'ENV VARIABLE',
     other: 'OTHER',
@@ -60,6 +61,7 @@ const linkType = {
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
+    defineMtaPropertiesSet: 'define MTA Properties Set',
     defineMtaProperty: 'define MTA property',
     defineEnvVariable: 'define enviroment\nvariable',
     useMtaProperty: 'use MTA property',
@@ -346,6 +348,22 @@ function extractPropertySets(mtaGraph) {
         moduleNode.additionalInfo.module.provides?.forEach((provide) => {
             mtaGraph.propertySets[provide.name] = moduleNode;
 
+            const newPropertySetNode = {
+                type: nodeType.propertiesSet,
+                name: provide.name,
+                value: provide.name,
+                additionalInfo: {
+                    category: nodeCategory.property,
+                },
+            };
+
+            mtaGraph.addNode(newPropertySetNode);
+
+            moduleNode.links.push({
+                type: linkType.defineMtaPropertiesSet,
+                name: newPropertySetNode.name,
+            });
+
             Object.entries(provide.properties).forEach(([key, value]) => {
                 const newPropertyNode = {
                     type: nodeType.property,
@@ -358,7 +376,7 @@ function extractPropertySets(mtaGraph) {
 
                 mtaGraph.addNode(newPropertyNode);
 
-                moduleNode.links.push({
+                newPropertySetNode.links.push({
                     type: linkType.defineMtaProperty,
                     name: newPropertyNode.name,
                 });
