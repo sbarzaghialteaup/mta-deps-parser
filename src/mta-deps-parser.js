@@ -34,9 +34,11 @@ const nodeType = {
     serviceAutoscaler: '📈 SERVICE AUTOSCALER',
     serviceConnectivity: 'SERVICE CONNECTIVITY',
     serviceJobScheduler: '🕑 SERVICE JOB SCHEDULER',
+    saasRegistry: 'SAAS REGISTRY',
     userService: '👤 USER PROVIDED SERVICE',
     destination: 'DESTINATION',
     destinationURL: 'DESTINATION URL',
+    propertiesSet: 'PROPERTIES SET',
     property: 'PROPERTY',
     enviromentVariable: 'ENV VARIABLE',
     other: 'OTHER',
@@ -60,6 +62,7 @@ const linkType = {
     deployApp: 'deploy app',
     publishAppsTo: 'publish apps into',
     logTo: 'log to',
+    defineMtaPropertiesSet: 'define MTA Properties Set',
     defineMtaProperty: 'define MTA property',
     defineEnvVariable: 'define enviroment\nvariable',
     useMtaProperty: 'use MTA property',
@@ -138,6 +141,9 @@ function getNodeType(nodeInfo) {
             }
             if (nodeInfo.additionalInfo.service === 'jobscheduler') {
                 return nodeType.serviceJobScheduler;
+            }
+            if (nodeInfo.additionalInfo.service === 'saas-registry') {
+                return nodeType.saasRegistry;
             }
         }
 
@@ -346,6 +352,22 @@ function extractPropertySets(mtaGraph) {
         moduleNode.additionalInfo.module.provides?.forEach((provide) => {
             mtaGraph.propertySets[provide.name] = moduleNode;
 
+            const newPropertySetNode = {
+                type: nodeType.propertiesSet,
+                name: provide.name,
+                value: provide.name,
+                additionalInfo: {
+                    category: nodeCategory.property,
+                },
+            };
+
+            mtaGraph.addNode(newPropertySetNode);
+
+            moduleNode.links.push({
+                type: linkType.defineMtaPropertiesSet,
+                name: newPropertySetNode.name,
+            });
+
             Object.entries(provide.properties).forEach(([key, value]) => {
                 const newPropertyNode = {
                     type: nodeType.property,
@@ -358,7 +380,7 @@ function extractPropertySets(mtaGraph) {
 
                 mtaGraph.addNode(newPropertyNode);
 
-                moduleNode.links.push({
+                newPropertySetNode.links.push({
                     type: linkType.defineMtaProperty,
                     name: newPropertyNode.name,
                 });
@@ -418,6 +440,46 @@ function extractModulesRequirements(mtaGraph) {
                     mtaGraph.indexServiceName[require.name];
             }
         });
+    });
+}
+
+/**
+ *
+ * @param {MtaGraph} mtaGraph
+ */
+function extractResourceConfiguration(mtaGraph) {
+    function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
+        const regex = /~{(.*?)\}/g;
+        const m = [...parameterValue.matchAll(regex)];
+
+        m.forEach((property) => {
+            const [propertiesSet, propertyName] = property[1].split('/');
+            console.log(propertiesSet, propertyName);
+
+            resourceNode.links.push({
+                type: linkType.useMtaProperty,
+                name: `${propertiesSet}:${propertyName}`,
+                label: linkLabel,
+            });
+        });
+    }
+
+    mtaGraph.resourceNodes.forEach((resourceNode) => {
+        if (resourceNode.type === nodeType.saasRegistry) {
+            createLinkForParameter(
+                resourceNode,
+                resourceNode.additionalInfo.resource.parameters.config.appUrls
+                    .onSubscription,
+                'on subscription'
+            );
+
+            createLinkForParameter(
+                resourceNode,
+                resourceNode.additionalInfo.resource.parameters.config.appUrls
+                    .getDependencies,
+                'on dependencies'
+            );
+        }
     });
 }
 
@@ -690,6 +752,8 @@ function parse(str) {
     extractPropertySets(mtaGraph);
 
     extractModulesRequirements(mtaGraph);
+
+    extractResourceConfiguration(mtaGraph);
 
     moduleNodesTypeDetermination(mtaGraph);
 
