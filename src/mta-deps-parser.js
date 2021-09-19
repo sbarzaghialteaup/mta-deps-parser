@@ -15,16 +15,50 @@ const nodeCategory = {
 };
 
 const nodeType = {
+    nodejs: 'nodejs',
+    approuter: 'approuter',
+    portalDeployer: 'portalDeployer',
+    dbDeployer: 'dbDeployer',
+    appsDeployer: 'appsDeployer',
+    routeToApps: 'routeToApps',
+    destinationsDeployer: 'destinationsDeployer',
+    deployer: 'deployer',
+    html5: 'html5',
+    serviceHanaInstance: 'serviceHanaInstance',
+    serviceHtml5Repo: 'serviceHtml5Repo',
+    serviceHtml5Runtime: 'serviceHtml5Runtime',
+    serviceXsuaa: 'serviceXsuaa',
+    serviceDestination: 'serviceDestination',
+    serviceApplicationLog: 'serviceApplicationLog',
+    servicePortal: 'servicePortal',
+    serviceWorkflow: 'serviceWorkflow',
+    serviceTheming: 'serviceTheming',
+    serviceAutoscaler: 'serviceAutoscaler',
+    serviceConnectivity: 'serviceConnectivity',
+    serviceJobScheduler: 'serviceJobScheduler',
+    saasRegistry: 'saasRegistry',
+    userService: 'userService',
+    destination: 'destination',
+    destinationURL: 'destinationURL',
+    propertiesSet: 'propertiesSet',
+    property: 'property',
+    enviromentVariable: 'enviromentVariable',
+    other: 'other',
+};
+
+const nodeLabel = {
     nodejs: 'CAP',
     approuter: 'APPROUTER',
     portalDeployer: 'PORTAL DEPLOYER',
     dbDeployer: 'DB DEPLOYER',
     appsDeployer: 'APPS DEPLOYER',
+    routeToApps: 'ROUTE TO APPS',
     destinationsDeployer: 'DESTINATIONS DEPLOYER',
     deployer: 'DEPLOYER',
     html5: 'APP HTML5',
     serviceHanaInstance: 'SERVICE HANA CLOUD',
     serviceHtml5Repo: 'SERVICE HTML5 REPOSITORY',
+    serviceHtml5Runtime: 'SERVICE HTML5 RUNTIME',
     serviceXsuaa: '🔑 SERVICE XSUAA',
     serviceDestination: 'SERVICE DESTINATION',
     serviceApplicationLog: '📃 SERVICE APPLICATION LOG',
@@ -45,16 +79,42 @@ const nodeType = {
 };
 
 const linkType = {
+    readWrite: 'readWrite',
+    deployTablesTo: 'deployTablesTo',
+    createDestinationService: 'createDestinationService',
+    useXsuaaService: 'useXsuaaService',
+    defineDestinationInService: 'defineDestinationInService',
+    defineDestinationInSubaccount: 'defineDestinationInSubaccount',
+    pointToService: 'pointToService',
+    pointToUrl: 'pointToUrl',
+    useAppsFrom: 'useAppsFrom',
+    deployAppsTo: 'deployAppsTo',
+    routeAppsTo: 'routeAppsTo',
+    deployWorkflowDefinition: 'deployWorkflowDefinition',
+    autoscaledBy: 'autoscaledBy',
+    useConnectivity: 'useConnectivity',
+    scheduleJobsIn: 'scheduleJobsIn',
+    deployApp: 'deployApp',
+    publishAppsTo: 'publishAppsTo',
+    logTo: 'logTo',
+    defineMtaPropertiesSet: 'defineMtaPropertiesSet',
+    defineMtaProperty: 'defineMtaProperty',
+    defineEnvVariable: 'defineEnvVariable',
+    useMtaProperty: 'useMtaProperty',
+};
+
+const linkLabel = {
     readWrite: 'read/write',
     deployTablesTo: 'deploy tables to',
     createDestinationService: 'create destination service',
     useXsuaaService: 'use xsuaa service',
-    defineDestinationInService: 'define destination\nat destination level',
+    defineDestinationInService: 'define destination\nat service instance level',
     defineDestinationInSubaccount: 'define destination\nat subaccount level',
     pointToService: 'point to service',
     pointToUrl: 'point to url',
     useAppsFrom: 'use apps from\nHTML5 repository',
     deployAppsTo: 'deploy apps to\nHTML5 repository',
+    routeAppsTo: 'route apps to\nHTML5 repository',
     deployWorkflowDefinition: 'deploy workflow definition to',
     autoscaledBy: 'autoscaled by',
     useConnectivity: 'use connectivity',
@@ -79,6 +139,8 @@ function getDeployerType(nodeInfo) {
             return nodeType.portalDeployer;
         case nodeType.serviceHtml5Repo:
             return nodeType.appsDeployer;
+        case nodeType.serviceHtml5Runtime:
+            return nodeType.routeToApps;
         case nodeType.serviceDestination:
             return nodeType.destinationsDeployer;
         default:
@@ -116,7 +178,16 @@ function getNodeType(nodeInfo) {
             nodeInfo.additionalInfo.type === 'org.cloudfoundry.managed-service'
         ) {
             if (nodeInfo.additionalInfo.service === 'html5-apps-repo') {
-                return nodeType.serviceHtml5Repo;
+                switch (
+                    nodeInfo.additionalInfo.resource.parameters['service-plan']
+                ) {
+                    case 'app-host':
+                        return nodeType.serviceHtml5Repo;
+                    case 'app-runtime':
+                        return nodeType.serviceHtml5Runtime;
+                    default:
+                        return nodeType.other;
+                }
             }
             if (nodeInfo.additionalInfo.service === 'destination') {
                 return nodeType.serviceDestination;
@@ -145,6 +216,12 @@ function getNodeType(nodeInfo) {
             if (nodeInfo.additionalInfo.service === 'saas-registry') {
                 return nodeType.saasRegistry;
             }
+
+            if (nodeInfo.additionalInfo.service === 'xsuaa') {
+                return nodeType.serviceXsuaa;
+            }
+
+            return nodeInfo.additionalInfo.service;
         }
 
         if (
@@ -158,10 +235,7 @@ function getNodeType(nodeInfo) {
             }
         }
 
-        if (
-            nodeInfo.additionalInfo.service === 'xsuaa' ||
-            nodeInfo.additionalInfo.type === 'com.sap.xs.uaa'
-        ) {
+        if (nodeInfo.additionalInfo.type === 'com.sap.xs.uaa') {
             return nodeType.serviceXsuaa;
         }
     }
@@ -218,6 +292,13 @@ function getLinkType(link) {
         link.destNode.type === nodeType.serviceHtml5Repo
     ) {
         return linkType.deployAppsTo;
+    }
+
+    if (
+        link.sourceNode.type === nodeType.approuter &&
+        link.destNode.type === nodeType.serviceHtml5Runtime
+    ) {
+        return linkType.routeAppsTo;
     }
 
     if (
@@ -284,6 +365,7 @@ function lookForDeployedDestinations(deployerNode, mtaGraph) {
             serviceDestinationNode.links.push({
                 type: useLinkType,
                 name: destination.Name,
+                label: linkLabel[useLinkType],
             });
 
             const pointToNode =
@@ -366,6 +448,7 @@ function extractPropertySets(mtaGraph) {
             moduleNode.links.push({
                 type: linkType.defineMtaPropertiesSet,
                 name: newPropertySetNode.name,
+                label: linkLabel[linkType.defineMtaPropertiesSet],
             });
 
             Object.entries(provide.properties).forEach(([key, value]) => {
@@ -448,6 +531,7 @@ function extractModulesRequirements(mtaGraph) {
  * @param {MtaGraph} mtaGraph
  */
 function extractResourceConfiguration(mtaGraph) {
+    // eslint-disable-next-line no-shadow
     function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
         const regex = /~{(.*?)\}/g;
         const m = [...parameterValue.matchAll(regex)];
@@ -490,6 +574,7 @@ function extractResourceConfiguration(mtaGraph) {
 function moduleNodesTypeDetermination(mtaGraph) {
     mtaGraph.moduleNodes.forEach((moduleNode) => {
         moduleNode.type = getNodeType(moduleNode);
+        moduleNode.label = nodeLabel[moduleNode.type];
     });
 }
 
@@ -543,6 +628,7 @@ function extractEnviromentVariables(mtaGraph) {
             moduleNode.links.push({
                 type: linkType.defineEnvVariable,
                 name: newEnvVariableNode.name,
+                label: linkLabel[linkType.defineEnvVariable],
             });
 
             const propertiesLinks = extractLinksToProperties(require);
@@ -594,6 +680,7 @@ function setLinksType(mtaGraph) {
                     exit(1);
                 }
                 link.type = getLinkType(link);
+                link.label = linkLabel[link.type];
             });
     });
 }
@@ -622,6 +709,23 @@ function extractDestinationsFromModules(mtaGraph) {
  * @param {MtaGraph} mtaGraph
  */
 function extractDestinationsFromResources(mtaGraph) {
+    // eslint-disable-next-line no-shadow
+    function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
+        const regex = /~{(.*?)\}/g;
+        const m = [...parameterValue.matchAll(regex)];
+
+        m.forEach((property) => {
+            const [propertiesSet, propertyName] = property[1].split('/');
+            console.log(propertiesSet, propertyName);
+
+            resourceNode.links.push({
+                type: linkType.useMtaProperty,
+                name: `${propertiesSet}:${propertyName}`,
+                label: linkLabel,
+            });
+        });
+    }
+
     mtaGraph.resourceNodes.forEach((node) => {
         node.additionalInfo.resource.parameters?.config?.init_data?.instance?.destinations?.forEach(
             (destination) => {
@@ -639,6 +743,7 @@ function extractDestinationsFromResources(mtaGraph) {
                 node.links.push({
                     type: linkType.defineDestinationInService,
                     name: destination.Name,
+                    label: linkLabel[linkType.defineDestinationInService],
                 });
 
                 const newUrlNode = {
@@ -650,12 +755,19 @@ function extractDestinationsFromResources(mtaGraph) {
                     },
                 };
 
-                mtaGraph.addNode(newUrlNode);
+                // mtaGraph.addNode(newUrlNode);
 
-                newDestinationNode.links.push({
-                    type: linkType.pointToUrl,
-                    name: newUrlNode.name,
-                });
+                // newDestinationNode.links.push({
+                //     type: linkType.pointToUrl,
+                //     name: newUrlNode.name,
+                //     label: linkLabel[linkType.pointToUrl],
+                // });
+
+                createLinkForParameter(
+                    newDestinationNode,
+                    newUrlNode.name,
+                    'point to url'
+                );
             }
         );
     });
@@ -668,6 +780,14 @@ function extractDestinationsFromResources(mtaGraph) {
 function setClusterToLinks(mtaGraph) {
     mtaGraph.nodes.forEach((node) => {
         node.links?.forEach((link) => {
+            if (node.type === nodeType.nodejs) {
+                link.cluster = 'CAP SERVICE';
+            }
+
+            if (node.type === nodeType.approuter) {
+                link.cluster = 'APP ROUTER';
+            }
+
             if (
                 link.type === linkType.deployTablesTo ||
                 link.type === linkType.readWrite
@@ -687,7 +807,8 @@ function setClusterToLinks(mtaGraph) {
 
             if (
                 link.type === linkType.deployAppsTo ||
-                link.type === linkType.deployApp
+                link.type === linkType.deployApp ||
+                link.type === linkType.routeAppsTo
             ) {
                 link.cluster = 'HTML5 APPS';
             }
@@ -708,6 +829,12 @@ class MtaGraph {
     }
 
     addNode(newNode) {
+        if (!newNode.label && newNode.type) {
+            newNode.label = nodeLabel[newNode.type]
+                ? nodeLabel[newNode.type]
+                : newNode.type.toUpperCase();
+        }
+
         if (!newNode.links) {
             newNode.links = [];
         }
@@ -742,6 +869,9 @@ function parse(str) {
     const mtaGraph = new MtaGraph();
 
     const mta = YAML.parse(str);
+
+    mtaGraph.ID = mta.ID;
+    mtaGraph.version = mta.version;
 
     extractResources(mta, mtaGraph);
 
