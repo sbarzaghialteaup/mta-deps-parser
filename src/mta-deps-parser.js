@@ -1,6 +1,5 @@
 /* eslint no-param-reassign: ["error", { "props": false }] */
 /* eslint-disable no-plusplus */
-/* eslint-disable no-console */
 
 const YAML = require('yaml');
 const { exit } = require('process');
@@ -128,6 +127,59 @@ const linkLabel = {
     useMtaProperty: 'use MTA property',
 };
 
+class MtaGraph {
+    constructor() {
+        this.nodes = [];
+        this.linksIndex = [];
+        this.indexServiceName = [];
+        this.propertySets = [];
+    }
+
+    addNode(newNode) {
+        if (!newNode.label && newNode.type) {
+            newNode.label = nodeLabel[newNode.type]
+                ? nodeLabel[newNode.type]
+                : newNode.type.toUpperCase();
+        }
+
+        if (!newNode.links) {
+            newNode.links = [];
+        }
+        this.nodes.push(newNode);
+        this.linksIndex[newNode.name] = newNode;
+
+        if (newNode.additionalInfo.category === nodeCategory.resource) {
+            this.indexServiceName[newNode.name] = newNode;
+
+            const serviceName =
+                newNode.additionalInfo.resource?.parameters?.['service-name'];
+            if (serviceName) {
+                this.indexServiceName[serviceName] = newNode;
+            }
+        }
+    }
+
+    static addLink(node, linkName, useLinkType, forceLinkLabel) {
+        node.links.push({
+            type: useLinkType,
+            name: linkName,
+            label: forceLinkLabel || linkLabel[useLinkType],
+        });
+    }
+
+    get moduleNodes() {
+        return this.nodes.filter(
+            (node) => node.additionalInfo.category === nodeCategory.module
+        );
+    }
+
+    get resourceNodes() {
+        return this.nodes.filter(
+            (node) => node.additionalInfo.category === nodeCategory.resource
+        );
+    }
+}
+
 function getDeployerType(nodeInfo) {
     assert(
         typeof nodeInfo.contentTarget === 'object',
@@ -144,6 +196,7 @@ function getDeployerType(nodeInfo) {
         case nodeType.serviceDestination:
             return nodeType.destinationsDeployer;
         default:
+            // eslint-disable-next-line no-console
             console.log(
                 `Using the generic deployer for the service "${nodeInfo.contentTarget.type}",\nplease notify this to the mta-deps-parser package maintainer with:\nhttps://github.com/sbarzaghialteaup/mta-deps-parser/issues/new`
             );
@@ -329,6 +382,7 @@ function getServiceDestinationNode(node) {
     );
 
     if (!serviceDestinationLink) {
+        // eslint-disable-next-line no-console
         console.error(
             `Module ${node.name} with defined destinations but without service destination`
         );
@@ -336,6 +390,7 @@ function getServiceDestinationNode(node) {
     }
 
     if (!serviceDestinationLink.destNode) {
+        // eslint-disable-next-line no-console
         console.error(
             `Resource ${serviceDestinationLink.name} required by module ${node.name}`
         );
@@ -362,20 +417,20 @@ function lookForDeployedDestinations(deployerNode, mtaGraph) {
             const serviceDestinationNode =
                 getServiceDestinationNode(deployerNode);
 
-            serviceDestinationNode.links.push({
-                type: useLinkType,
-                name: destination.Name,
-                label: linkLabel[useLinkType],
-            });
+            MtaGraph.addLink(
+                serviceDestinationNode,
+                destination.Name,
+                useLinkType
+            );
 
             const pointToNode =
                 mtaGraph.indexServiceName[destination.ServiceInstanceName];
 
-            newDestinationNode.links.push({
-                name: pointToNode.name,
-                node: pointToNode,
-                type: linkType.pointToService,
-            });
+            MtaGraph.addLink(
+                newDestinationNode,
+                pointToNode.name,
+                linkType.pointToService
+            );
         };
     }
 
@@ -445,11 +500,11 @@ function extractPropertySets(mtaGraph) {
 
             mtaGraph.addNode(newPropertySetNode);
 
-            moduleNode.links.push({
-                type: linkType.defineMtaPropertiesSet,
-                name: newPropertySetNode.name,
-                label: linkLabel[linkType.defineMtaPropertiesSet],
-            });
+            MtaGraph.addLink(
+                moduleNode,
+                newPropertySetNode.name,
+                linkType.defineMtaPropertiesSet
+            );
 
             Object.entries(provide.properties).forEach(([key, value]) => {
                 const newPropertyNode = {
@@ -463,10 +518,11 @@ function extractPropertySets(mtaGraph) {
 
                 mtaGraph.addNode(newPropertyNode);
 
-                newPropertySetNode.links.push({
-                    type: linkType.defineMtaProperty,
-                    name: newPropertyNode.name,
-                });
+                MtaGraph.addLink(
+                    newPropertySetNode,
+                    newPropertyNode.name,
+                    linkType.defineMtaProperty
+                );
             });
         });
     });
@@ -494,10 +550,11 @@ function extractPropertiesFromResources(mtaGraph) {
 
                 mtaGraph.addNode(newPropertyNode);
 
-                resourceNode.links.push({
-                    type: linkType.defineMtaProperty,
-                    name: newPropertyNode.name,
-                });
+                MtaGraph.addLink(
+                    resourceNode,
+                    newPropertyNode.name,
+                    linkType.defineMtaProperty
+                );
             });
         }
     });
@@ -531,19 +588,23 @@ function extractModulesRequirements(mtaGraph) {
  * @param {MtaGraph} mtaGraph
  */
 function extractResourceConfiguration(mtaGraph) {
-    // eslint-disable-next-line no-shadow
-    function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
+    function createLinkForParameter(
+        resourceNode,
+        parameterValue,
+        useLinkLabel
+    ) {
         const regex = /~{(.*?)\}/g;
         const m = [...parameterValue.matchAll(regex)];
 
         m.forEach((property) => {
             const [propertiesSet, propertyName] = property[1].split('/');
 
-            resourceNode.links.push({
-                type: linkType.useMtaProperty,
-                name: `${propertiesSet}:${propertyName}`,
-                label: linkLabel,
-            });
+            MtaGraph.addLink(
+                resourceNode,
+                `${propertiesSet}:${propertyName}`,
+                linkType.useMtaProperty,
+                useLinkLabel
+            );
         });
     }
 
@@ -596,6 +657,7 @@ function extractEnviromentVariables(mtaGraph) {
                 links.push({
                     type: linkType.useMtaProperty,
                     name: nodeName,
+                    label: linkLabel[linkType.useMtaProperty],
                 });
             }
         }
@@ -624,11 +686,11 @@ function extractEnviromentVariables(mtaGraph) {
 
             mtaGraph.addNode(newEnvVariableNode);
 
-            moduleNode.links.push({
-                type: linkType.defineEnvVariable,
-                name: newEnvVariableNode.name,
-                label: linkLabel[linkType.defineEnvVariable],
-            });
+            MtaGraph.addLink(
+                moduleNode,
+                newEnvVariableNode.name,
+                linkType.defineEnvVariable
+            );
 
             const propertiesLinks = extractLinksToProperties(require);
 
@@ -673,6 +735,7 @@ function setLinksType(mtaGraph) {
                 link.destNode = mtaGraph.linksIndex[link.name];
 
                 if (!link.destNode) {
+                    // eslint-disable-next-line no-console
                     console.error(
                         `Node '${link.sourceNode.name}' require link to node '${link.name}' but node '${link.name}' cannot be resolved`
                     );
@@ -708,19 +771,23 @@ function extractDestinationsFromModules(mtaGraph) {
  * @param {MtaGraph} mtaGraph
  */
 function extractDestinationsFromResources(mtaGraph) {
-    // eslint-disable-next-line no-shadow
-    function createLinkForParameter(resourceNode, parameterValue, linkLabel) {
+    function createLinkForParameter(
+        resourceNode,
+        parameterValue,
+        useLinkLabel
+    ) {
         const regex = /~{(.*?)\}/g;
         const m = [...parameterValue.matchAll(regex)];
 
         m.forEach((property) => {
             const [propertiesSet, propertyName] = property[1].split('/');
 
-            resourceNode.links.push({
-                type: linkType.useMtaProperty,
-                name: `${propertiesSet}:${propertyName}`,
-                label: linkLabel,
-            });
+            MtaGraph.addLink(
+                resourceNode,
+                `${propertiesSet}:${propertyName}`,
+                linkType.useMtaProperty,
+                useLinkLabel
+            );
         });
     }
 
@@ -738,11 +805,11 @@ function extractDestinationsFromResources(mtaGraph) {
 
                 mtaGraph.addNode(newDestinationNode);
 
-                node.links.push({
-                    type: linkType.defineDestinationInService,
-                    name: destination.Name,
-                    label: linkLabel[linkType.defineDestinationInService],
-                });
+                MtaGraph.addLink(
+                    node,
+                    destination.Name,
+                    linkType.defineDestinationInService
+                );
 
                 const newUrlNode = {
                     type: nodeType.destinationURL,
@@ -816,51 +883,6 @@ function setClusterToLinks(mtaGraph) {
             }
         });
     });
-}
-
-class MtaGraph {
-    constructor() {
-        this.nodes = [];
-        this.linksIndex = [];
-        this.indexServiceName = [];
-        this.propertySets = [];
-    }
-
-    addNode(newNode) {
-        if (!newNode.label && newNode.type) {
-            newNode.label = nodeLabel[newNode.type]
-                ? nodeLabel[newNode.type]
-                : newNode.type.toUpperCase();
-        }
-
-        if (!newNode.links) {
-            newNode.links = [];
-        }
-        this.nodes.push(newNode);
-        this.linksIndex[newNode.name] = newNode;
-
-        if (newNode.additionalInfo.category === nodeCategory.resource) {
-            this.indexServiceName[newNode.name] = newNode;
-
-            const serviceName =
-                newNode.additionalInfo.resource?.parameters?.['service-name'];
-            if (serviceName) {
-                this.indexServiceName[serviceName] = newNode;
-            }
-        }
-    }
-
-    get moduleNodes() {
-        return this.nodes.filter(
-            (node) => node.additionalInfo.category === nodeCategory.module
-        );
-    }
-
-    get resourceNodes() {
-        return this.nodes.filter(
-            (node) => node.additionalInfo.category === nodeCategory.resource
-        );
-    }
 }
 
 function parse(str) {
