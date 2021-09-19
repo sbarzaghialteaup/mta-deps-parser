@@ -538,7 +538,6 @@ function extractResourceConfiguration(mtaGraph) {
 
         m.forEach((property) => {
             const [propertiesSet, propertyName] = property[1].split('/');
-            console.log(propertiesSet, propertyName);
 
             resourceNode.links.push({
                 type: linkType.useMtaProperty,
@@ -716,7 +715,6 @@ function extractDestinationsFromResources(mtaGraph) {
 
         m.forEach((property) => {
             const [propertiesSet, propertyName] = property[1].split('/');
-            console.log(propertiesSet, propertyName);
 
             resourceNode.links.push({
                 type: linkType.useMtaProperty,
