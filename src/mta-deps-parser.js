@@ -107,7 +107,7 @@ const linkLabel = {
     deployTablesTo: 'deploy tables to',
     createDestinationService: 'create destination service',
     useXsuaaService: 'use xsuaa service',
-    defineDestinationInService: 'define destination\nat service instance level',
+    defineDestinationInService: 'define destination\nat instance level',
     defineDestinationInSubaccount: 'define destination\nat subaccount level',
     pointToService: 'point to service',
     pointToUrl: 'point to url',
